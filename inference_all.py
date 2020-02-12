@@ -172,6 +172,7 @@ if __name__ == '__main__':
     parser.add_argument('--results_dir', type=str, default="results", help="生成画像の出力ディレクトリ")
     parser.add_argument('--load_checkpoints_path', default='checkpoints/universal_trained.pth', type=str, help="学習済みモデルのチェックポイントへのパス")
     parser.add_argument('--use_gpu', default=1, type=int)
+    parser.add_argument('--save_vis', action='store_true', help="視覚用のRGB画像の人物パース画像も保存するか否か")
     parser.add_argument('--debug', action='store_true', help="デバッグモード有効化")
     opts = parser.parse_args()
     if( opts.debug ):
@@ -215,4 +216,5 @@ if __name__ == '__main__':
         parse_img, parse_img_RGB = inference( net=net, img_path=in_img_path, use_gpu=use_gpu )
 
         cv2.imwrite( os.path.join( opts.results_dir, image_name.split(".")[0] + ".png" ), parse_img )
-        parse_img_RGB.save( os.path.join( opts.results_dir, image_name.split(".")[0] + "_vis.png" ) )
+        if( opts.save_vis ):
+            parse_img_RGB.save( os.path.join( opts.results_dir, image_name.split(".")[0] + "_vis.png" ) )

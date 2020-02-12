@@ -14,5 +14,21 @@ Graphonomy の推論スクリプト [`inference.py`](https://github.com/Yagami36
 
 1. 推論スクリプトを実行
     ```sh
-    $ sh inference_all.sh 
+    # 視覚用の人物パース画像の RGB画像も生成する場合
+    # --in_image_dir : 入力人物画像のディレクトリ
+    # --results_dir : 人物パース画像のディレクトリ
+    $ python inference_all.py \
+        --use_gpu 1 \
+        --in_image_dir ${IN_IMAGE_DIR} \
+        --results_dir ${RESULTS_DIR} \
+        --load_checkpoints_path checkpoints/universal_trained.pth \
+        --save_vis
+    ```
+    ```sh
+    # グレースケール画像のみ生成する場合
+    $ python inference_all.py \
+        --use_gpu 1 \
+        --in_image_dir ${IN_IMAGE_DIR} \
+        --results_dir ${RESULTS_DIR} \
+        --load_checkpoints_path checkpoints/universal_trained.pth
     ```

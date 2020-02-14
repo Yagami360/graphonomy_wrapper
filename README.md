@@ -1,5 +1,5 @@
 # graphonomy_wrapper
-Graphonomy の推論スクリプト [`inference.py`](https://github.com/Yagami360/Test_Repository/tree/master/graphonomy-pallarel/graphonomy/Graphonomy/exp/inference) のラッパーモジュール。<br>
+[Graphonomy](https://github.com/Gaoyiminggithub/Graphonomy) の推論スクリプト [`inference.py`](https://github.com/Gaoyiminggithub/Graphonomy/blob/master/exp/inference/inference.py) のラッパーモジュール。<br>
 単一の画像ではなく、指定したフォルダ内の全人物画像に対して、人物パース画像を生成するように修正しています。
 
 ## ■ 動作環境
@@ -10,7 +10,7 @@ Graphonomy の推論スクリプト [`inference.py`](https://github.com/Yagami36
 ## ■ 使い方
 1. 学習済みモデルをダウンロードして、checkpoints 以下のフォルダに保管
     1. Universal trained model : [Dowload](https://drive.google.com/file/d/1sWJ54lCBFnzCNz5RTCGQmkVovkY9x8_D/view)<br>
-    ※ 詳細は、オリジナルの [Graphonomy](https://github.com/Yagami360/Test_Repository/tree/master/graphonomy-pallarel/graphonomy/Graphonomy) の `README.md` を参照
+    ※ 詳細は、オリジナルの [Graphonomy](ttps://github.com/Gaoyiminggithub/Graphonomy) の `README.md` を参照
 
 1. 推論スクリプトを実行
     ```sh

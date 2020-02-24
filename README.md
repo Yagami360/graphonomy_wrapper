@@ -8,9 +8,13 @@
 - tqdm
 
 ## ■ 使い方
-1. 学習済みモデルをダウンロードして、checkpoints 以下のフォルダに保管
-    1. Universal trained model : [Dowload](https://drive.google.com/file/d/1sWJ54lCBFnzCNz5RTCGQmkVovkY9x8_D/view)<br>
-    ※ 詳細は、オリジナルの [Graphonomy](ttps://github.com/Gaoyiminggithub/Graphonomy) の `README.md` を参照
+1. 以下のスクリプトを実装し、学習済みモデルをダウンロードして、checkpoints 以下のフォルダに保管する。
+    ```sh
+    $ sh download_model.sh
+    ```
+
+    - [Download 先 (Universal trained model)](https://drive.google.com/file/d/1sWJ54lCBFnzCNz5RTCGQmkVovkY9x8_D/view)<br>
+    - 事前学習済みモデルの詳細は、オリジナルの [Graphonomy](ttps://github.com/Gaoyiminggithub/Graphonomy) の `README.md` を参照
 
 1. 推論スクリプトを実行
     ```sh

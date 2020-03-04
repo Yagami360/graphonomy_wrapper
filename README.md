@@ -38,8 +38,6 @@
 
 ## ■ 使い方
 
-### ◎ サーバー機能非使用時（Docker 非使用時）
-
 1. 事前学習済みモデルのダウンロード<br>
     まず以下のスクリプトを実装し、学習済みモデルをダウンロードして、checkpoints 以下のフォルダに保管する必要があります。
     ```sh
@@ -49,7 +47,9 @@
     - [Download 先 (Universal trained model)](https://drive.google.com/file/d/1sWJ54lCBFnzCNz5RTCGQmkVovkY9x8_D/view)<br>
     - 事前学習済みモデルの詳細は、オリジナルの [Graphonomy](ttps://github.com/Gaoyiminggithub/Graphonomy) の `README.md` を参照
 
-2.  推論スクリプトの実行（GPU で実行時）<br>
+### ◎ サーバー機能非使用時（Docker 非使用時）
+
+- 推論スクリプトの実行（GPU で実行時）<br>
     ```sh
     # 視覚用の人物パース画像の RGB画像も生成する場合（AMP 使用）
     # --in_image_dir : 入力人物画像のディレクトリ
@@ -72,7 +72,7 @@
         --use_amp
     ```
 
-3.  推論スクリプトの実行（CPU で実行時）<br>
+- 推論スクリプトの実行（CPU で実行時）<br>
     ```sh
     # 視覚用の人物パース画像の RGB画像も生成する場合
     # --in_image_dir : 入力人物画像のディレクトリ

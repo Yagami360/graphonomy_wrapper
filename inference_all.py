@@ -91,7 +91,7 @@ def img_transform(img, transform=None):
     sample = transform(sample)
     return sample
 
-def inference(net, img_path='', device="gpu"):
+def inference(net, img_path, device ):
     # adj
     adj2_ = torch.from_numpy(graph.cihp2pascal_nlp_adj).float()
     adj2_test = adj2_.unsqueeze(0).unsqueeze(0).expand(1, 1, 7, 20).to(device).transpose(2, 3)
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     for image_name in tqdm(image_names):
         in_img_path = os.path.join( args.in_image_dir, image_name )
         img = Image.open( os.path.join(args.in_image_dir, image_name ) )
-        parse_img, parse_img_RGB = inference( net=model, img_path=in_img_path, device=args.device )
+        parse_img, parse_img_RGB = inference( net=model, img_path=in_img_path, device=device )
 
         cv2.imwrite( os.path.join( args.results_dir, image_name.split(".")[0] + ".png" ), parse_img )
         if( args.save_vis ):

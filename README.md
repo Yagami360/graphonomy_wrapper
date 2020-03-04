@@ -6,7 +6,7 @@
 - CPU と GPU の両方での動作に対応。<br>
 - サーバー機能を追加。
 - AMP [Automatic Mixed Precision] を用いて、処理時間と使用メモリを削減（GPU 動作時のみ有効）
-- 【準備中】docker 環境に対応。
+- docker 環境に対応。
 
 ## ■ 動作環境
 
@@ -116,7 +116,7 @@
         --results_dir results
     ```
 
-### ◎ 【準備中】 サーバー機能使用時 （Docker 使用時）
+### ◎ サーバー機能使用時 （Docker 使用時）
 コンテナ内でサーバーを起動して Graphonomy を実行します。<br>
 サーバー機能使用時は、デフォルト設定では、5001 番ポート（GPUコンテナ） と 5002 番ポート（CPUコンテナ）が開放されている必要があります。 <br>
 使用するポート番号は、docker-compose.yml 内の ports: タグ、及び、`app.py`, `request.py` の --port 引数の値を設定することで変更できます。<br>

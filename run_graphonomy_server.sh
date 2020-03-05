@@ -7,4 +7,5 @@ fi
 python app.py \
     --host 0.0.0.0 --port 5001 \
     --device gpu \
+    --use_amp \
     --debug

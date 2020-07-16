@@ -80,6 +80,11 @@ class VOCSegmentation(Dataset):
                 _image = os.path.join(self._image_dir, line+'.jpg' )
                 _cat = os.path.join(self._cat_dir, line +'.png')
                 _flip = os.path.join(self._flip_dir,line + '.png')
+
+                print( "_image : ", _image )
+                print( "_cat : ", _cat )
+                print( "_flip : ", _flip )
+
                 # print(self._image_dir,_image)
                 assert os.path.isfile(_image)
                 # print(_cat)
@@ -102,6 +107,10 @@ class VOCSegmentation(Dataset):
 
                 _image = os.path.join(self._image_dir_pascal, line+'.jpg' )
                 _cat = os.path.join(self._cat_dir_pascal, line +'.png')
+
+                print( "_image : ", _image )
+                print( "_cat : ", _cat )
+
                 # _flip = os.path.join(self._flip_dir,line + '.png')
                 # print(self._image_dir,_image)
                 assert os.path.isfile(_image)

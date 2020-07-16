@@ -213,6 +213,8 @@ def main(opts):
     if opts.freezeBN:
         net_.freeze_bn()
 
+    print(net_)
+
     # Use the following optimizer
     optimizer = optim.SGD(net_.parameters(), lr=p['lr'], momentum=p['momentum'], weight_decay=p['wd'])
 
@@ -230,9 +232,12 @@ def main(opts):
         tr.Normalize_xception_tf(),
         tr.ToTensor_()])
 
-    voc_train = cihp.VOCSegmentation(split='train', transform=composed_transforms_tr, flip=True)
-    voc_val = cihp.VOCSegmentation(split='val', transform=composed_transforms_ts)
-    voc_val_flip = cihp.VOCSegmentation(split='val', transform=composed_transforms_ts_flip)
+    #voc_train = cihp.VOCSegmentation(split='train', transform=composed_transforms_tr, flip=True)
+    #voc_val = cihp.VOCSegmentation(split='val', transform=composed_transforms_ts)
+    #voc_val_flip = cihp.VOCSegmentation(split='val', transform=composed_transforms_ts_flip)
+    voc_train = cihp.VOCSegmentation(base_dir="../../data/datasets/CIHP_4w", split='train', transform=composed_transforms_tr, flip=True)
+    voc_val = cihp.VOCSegmentation(base_dir="../../data/datasets/CIHP_4w", split='val', transform=composed_transforms_ts)
+    voc_val_flip = cihp.VOCSegmentation(base_dir="../../data/datasets/CIHP_4w", split='val', transform=composed_transforms_ts_flip)
 
     trainloader = DataLoader(voc_train, batch_size=p['trainBatch'], shuffle=True, num_workers=p['num_workers'],drop_last=True)
     testloader = DataLoader(voc_val, batch_size=testBatch, shuffle=False, num_workers=p['num_workers'])
@@ -272,7 +277,12 @@ def main(opts):
             if gpu_id >= 0:
                 inputs, labels = inputs.cuda(), labels.cuda()
 
+            print( "inputs.shape : ", inputs.shape )    # torch.Size([batch, 3, 512, 512])
+            print( "adj1.shape : ", adj1.shape )        # torch.Size([8, 1, 20, 20])
+            print( "adj2.shape : ", adj2.shape )        # torch.Size([8, 1, 20, 7])
+            print( "adj3.shape : ", adj3.shape )        # torch.Size([8, 1, 7, 7])
             outputs = net.forward(inputs, adj1, adj3, adj2)
+            print( "outputs.shape : ", outputs.shape )
 
             loss = criterion(outputs, labels, batch_average=True)
             running_loss_tr += loss.item()

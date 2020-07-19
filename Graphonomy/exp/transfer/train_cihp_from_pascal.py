@@ -64,6 +64,7 @@ def get_parser():
     LookupChoices = type('', (argparse.Action,), dict(__call__=lambda a, p, n, v, o: setattr(n, a.dest, a.choices[v])))
 
     parser.add_argument('--epochs', default=100, type=int)
+    parser.add_argument('--image_size', default=512, type=int)
     parser.add_argument('--batch', default=16, type=int)
     parser.add_argument('--lr', default=1e-7, type=float)
     parser.add_argument('--numworker',default=12,type=int)
@@ -75,31 +76,34 @@ def get_parser():
     parser.add_argument('--pretrainedModel', default='', type=str)
     parser.add_argument('--hidden_layers',default=128,type=int)
     parser.add_argument('--gpus',default=4, type=int)
-
+    parser.add_argument('--device', choices=['cpu', 'gpu'], default="gpu", help="使用デバイス (CPU or GPU)")
     opts = parser.parse_args()
     return opts
 
-def get_graphs(opts):
+def get_graphs(opts, device ):
     adj2_ = torch.from_numpy(graph.cihp2pascal_nlp_adj).float()
-    adj2 = adj2_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 20).transpose(2, 3).cuda()
+    #adj2 = adj2_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 20).transpose(2, 3).cuda()
+    adj2 = adj2_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 20).transpose(2, 3).to(device)
     adj2_test = adj2_.unsqueeze(0).unsqueeze(0).expand(1, 1, 7, 20).transpose(2, 3)
 
     adj1_ = Variable(torch.from_numpy(graph.preprocess_adj(graph.pascal_graph)).float())
-    adj3 = adj1_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 7).cuda()
+    #adj3 = adj1_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 7).cuda()
+    adj3 = adj1_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 7).to(device)
     adj3_test = adj1_.unsqueeze(0).unsqueeze(0).expand(1, 1, 7, 7)
 
     # adj2 = torch.from_numpy(graph.cihp2pascal_adj).float()
     # adj2 = adj2.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 20)
     cihp_adj = graph.preprocess_adj(graph.cihp_graph)
     adj3_ = Variable(torch.from_numpy(cihp_adj).float())
-    adj1 = adj3_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 20, 20).cuda()
+    #adj1 = adj3_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 20, 20).cuda()
+    adj1 = adj3_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 20, 20).to(device)
     adj1_test = adj3_.unsqueeze(0).unsqueeze(0).expand(1, 1, 20, 20)
     train_graph = [adj1, adj2, adj3]
     test_graph = [adj1_test, adj2_test, adj3_test]
     return train_graph, test_graph
 
 
-def val_cihp(net_, testloader, testloader_flip, test_graph, epoch, writer, criterion, classes=20):
+def val_cihp(net_, testloader, testloader_flip, test_graph, epoch, writer, criterion, classes, device):
     adj1_test, adj2_test, adj3_test = test_graph
     num_img_ts = len(testloader)
     net_.eval()
@@ -115,10 +119,13 @@ def val_cihp(net_, testloader, testloader_flip, test_graph, epoch, writer, crite
         # Forward pass of the mini-batch
         inputs, labels = Variable(inputs, requires_grad=False), Variable(labels)
         if gpu_id >= 0:
-            inputs, labels = inputs.cuda(), labels.cuda()
+            #inputs, labels = inputs.cuda(), labels.cuda()
+            inputs, labels = inputs.to(device), labels.to(device)
 
         with torch.no_grad():
-            outputs = net_.forward(inputs, adj1_test.cuda(), adj3_test.cuda(), adj2_test.cuda())
+            #outputs = net_.forward(inputs, adj1_test.cuda(), adj3_test.cuda(), adj2_test.cuda())
+            outputs = net_.forward(inputs, adj1_test.to(device), adj3_test.to(device), adj2_test.to(device))
+
         # pdb.set_trace()
         outputs = (outputs[0] + flip(flip_cihp(outputs[1]), dim=-1)) / 2
         outputs = outputs.unsqueeze(0)
@@ -174,6 +181,23 @@ def main(opts):
             max_id = run_id + 1
     save_dir = os.path.join(save_dir_root, 'run_cihp', 'run_' + str(max_id))
 
+    # Device
+    if( opts.device == "gpu" ):
+        use_cuda = torch.cuda.is_available()
+        if( use_cuda == True ):
+            device = torch.device( "cuda" )
+            #torch.cuda.set_device(args.gpu_ids[0])
+            print( "実行デバイス :", device)
+            print( "GPU名 :", torch.cuda.get_device_name(device))
+            print("torch.cuda.current_device() =", torch.cuda.current_device())
+        else:
+            print( "can't using gpu." )
+            device = torch.device( "cpu" )
+            print( "実行デバイス :", device)
+    else:
+        device = torch.device( "cpu" )
+        print( "実行デバイス :", device)
+
     # Network definition
     if backbone == 'xception':
         net_ = deeplab_xception_transfer.deeplab_xception_transfer_projection_savemem(n_classes=opts.classes, os=16,
@@ -189,7 +213,8 @@ def main(opts):
 
     if gpu_id >= 0:
         # torch.cuda.set_device(device=gpu_id)
-        net_.cuda()
+        #net_.cuda()
+        net_.to(device)
 
     # net load weights
     if not model_path == '':
@@ -219,7 +244,7 @@ def main(opts):
     optimizer = optim.SGD(net_.parameters(), lr=p['lr'], momentum=p['momentum'], weight_decay=p['wd'])
 
     composed_transforms_tr = transforms.Compose([
-            tr.RandomSized_new(512),
+            tr.RandomSized_new(opts.image_size),
             tr.Normalize_xception_tf(),
             tr.ToTensor_()])
 
@@ -251,8 +276,10 @@ def main(opts):
     global_step = 0
     print("Training Network")
 
+    print("num_img_tr : ", num_img_tr)
+
     net = torch.nn.DataParallel(net_)
-    train_graph, test_graph = get_graphs(opts)
+    train_graph, test_graph = get_graphs(opts,device)
     adj1, adj2, adj3 = train_graph
 
 
@@ -275,14 +302,15 @@ def main(opts):
             global_step += inputs.data.shape[0]
 
             if gpu_id >= 0:
-                inputs, labels = inputs.cuda(), labels.cuda()
+                #inputs, labels = inputs.cuda(), labels.cuda()
+                inputs, labels = inputs.to(device), labels.to(device)
 
-            print( "inputs.shape : ", inputs.shape )    # torch.Size([batch, 3, 512, 512])
-            print( "adj1.shape : ", adj1.shape )        # torch.Size([8, 1, 20, 20])
-            print( "adj2.shape : ", adj2.shape )        # torch.Size([8, 1, 20, 7])
-            print( "adj3.shape : ", adj3.shape )        # torch.Size([8, 1, 7, 7])
+            #print( "inputs.shape : ", inputs.shape )    # torch.Size([batch, 3, 512, 512])
+            #print( "adj1.shape : ", adj1.shape )        # torch.Size([8, 1, 20, 20])
+            #print( "adj2.shape : ", adj2.shape )        # torch.Size([8, 1, 20, 7])
+            #print( "adj3.shape : ", adj3.shape )        # torch.Size([8, 1, 7, 7])
             outputs = net.forward(inputs, adj1, adj3, adj2)
-            print( "outputs.shape : ", outputs.shape )
+            #print( "outputs.shape : ", outputs.shape )  # torch.Size([2, 20, 512, 512])
 
             loss = criterion(outputs, labels, batch_average=True)
             running_loss_tr += loss.item()
@@ -311,6 +339,7 @@ def main(opts):
 
             # Show 10 * 3 images results each epoch
             if ii % (num_img_tr // 10) == 0:
+#            if ii % (num_img_tr // 4000) == 0:
                 grid_image = make_grid(inputs[:3].clone().cpu().data, 3, normalize=True)
                 writer.add_image('Image', grid_image, global_step)
                 grid_image = make_grid(util.decode_seg_map_sequence(torch.max(outputs[:3], 1)[1].detach().cpu().numpy()), 3, normalize=False,
@@ -330,7 +359,7 @@ def main(opts):
         # One testing epoch
         if useTest and epoch % nTestInterval == (nTestInterval - 1):
             val_cihp(net_,testloader=testloader, testloader_flip=testloader_flip, test_graph=test_graph,
-                     epoch=epoch,writer=writer,criterion=criterion, classes=opts.classes)
+                     epoch=epoch,writer=writer,criterion=criterion, classes=opts.classes, device=device)
         torch.cuda.empty_cache()
 
 

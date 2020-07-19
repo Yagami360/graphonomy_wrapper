@@ -156,6 +156,9 @@ def cross_entropy2d(logit, target, ignore_index=255, weight=None, size_average=T
         criterion = nn.CrossEntropyLoss(weight=weight, ignore_index=ignore_index,size_average=size_average)
     else:
         criterion = nn.CrossEntropyLoss(weight=torch.from_numpy(np.array(weight)).float().cuda(), ignore_index=ignore_index, size_average=size_average)
+
+    #print( "logit.shape : ", logit.shape )      # torch.Size([2, 18, 512, 512])
+    #print( "target.shape : ", target.shape )    # torch.Size([2, 512, 512])
     loss = criterion(logit, target.long())
 
     return loss

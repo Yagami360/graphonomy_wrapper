@@ -97,6 +97,7 @@ class VOCSegmentation(Dataset):
                 self.datasets_lbl.append(0)
 
         # for pascal is 1
+        """
         for splt in self.split:
             if splt == 'test':
                 splt='val'
@@ -122,6 +123,7 @@ class VOCSegmentation(Dataset):
                 self.categories.append(_cat)
                 self.flip_categories.append([])
                 self.datasets_lbl.append(1)
+        """
 
         # for atr is 2
         for splt in self.split:
@@ -154,8 +156,6 @@ class VOCSegmentation(Dataset):
 
     def get_class_num(self):
         return self.num_cihp,self.num_pascal,self.num_atr
-
-
 
     def __getitem__(self, index):
         _img, _target,_lbl= self._make_img_gt_point_pair(index)

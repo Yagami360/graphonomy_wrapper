@@ -1,9 +1,19 @@
+#!/bin/sh
+#conda activate pytorch11_py36
+set -eu
+DATSET_DIR=${PWD}/data/datasets/ATR
+mkdir -p ${DATSET_DIR}
+mkdir -p ${DATSET_DIR}/JPEGImages
+mkdir -p ${DATSET_DIR}/SegmentationClassAug
+mkdir -p ${DATSET_DIR}/SegmentationClassAug_rev
+mkdir -p ${DATSET_DIR}/list
+
 #--------------
-# CIHP
+# ATR
 #--------------
 #<<COMMENTOUT
-FILE_ID1=1HdqA8yWVxZ8od0hngKzZTziHx_ONzCWj
-FILE_NAME1=instance-level_human_parsing.tar.gz
+FILE_ID1=0BzvH3bSnp3E9bmkyU3VoNEFJSWc
+FILE_NAME1="ICCV15_fashion_dataset(ATR).zip"
 curl -sc /tmp/cookie "https://drive.google.com/uc?export=download&id=${FILE_ID1}" > /dev/null
 CODE="$(awk '/_warning_/ {print $NF}' /tmp/cookie)"  
 curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${CODE}&id=${FILE_ID1}" -o ${FILE_NAME1}
@@ -13,27 +23,19 @@ cd ./data/datasets/
 tar -zxvf ${FILE_NAME1}
 rm -rf ${FILE_NAME1}
 
-cp -r instance-level_human_parsing/Training/* CIHP_4w/
-mv CIHP_4w/train_id.txt CIHP_4w/lists
-
-cp -r instance-level_human_parsing/Validation/* CIHP_4w/
-mv CIHP_4w/val_id.txt CIHP_4w/lists
-
-cp -r instance-level_human_parsing/Testing/* CIHP_4w/
-mv CIHP_4w/test_id.txt CIHP_4w/lists
-#COMMENTOUT
+cp -r humanparsing/* ${DATSET_DIR}
 
 #--------------
-# CIHP rev
+# ATR rev
 #--------------
-FILE_ID2=1aaJyQH-hlZEAsA7iH-mYeK1zLfQi8E2j
-FILE_NAME2=Category_rev_ids.rar
+FILE_ID2=1iR8Tn69IbDSM7gq_GG-_s11HCnhPkyG3
+FILE_NAME2=SegmentationClassAug_rev.rar
 curl -sc /tmp/cookie "https://drive.google.com/uc?export=download&id=${FILE_ID2}" > /dev/null
 CODE="$(awk '/_warning_/ {print $NF}' /tmp/cookie)"  
 curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${CODE}&id=${FILE_ID2}" -o ${FILE_NAME2}
-mv ${FILE_NAME2} ./data/datasets/CIHP_4w/Category_rev_ids
+mv ${FILE_NAME2} ${DATSET_DIR}/SegmentationClassAug_rev
 
-#cd ./data/datasets/CIHP_4w/Category_rev_ids
+cd ${DATSET_DIR}/SegmentationClassAug_rev
 #sudo apt-get install unrar
-#unrar e ${FILE_NAME2}
+unrar e ${FILE_NAME2}
 #rm -rf ${FILE_NAME2}

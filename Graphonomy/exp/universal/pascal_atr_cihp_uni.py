@@ -71,6 +71,7 @@ def get_parser():
     LookupChoices = type('', (argparse.Action,), dict(__call__=lambda a, p, n, v, o: setattr(n, a.dest, a.choices[v])))
 
     parser.add_argument('--epochs', default=100, type=int)
+    parser.add_argument('--image_size', default=512, type=int)
     parser.add_argument('--batch', default=16, type=int)
     parser.add_argument('--lr', default=1e-7, type=float)
     parser.add_argument('--numworker',default=12,type=int)
@@ -84,36 +85,37 @@ def get_parser():
     parser.add_argument('--hidden_layers',default=128,type=int)
     parser.add_argument('--gpus',default=4, type=int)
     parser.add_argument('--testInterval', default=5, type=int)
+    parser.add_argument('--device', choices=['cpu', 'gpu'], default="gpu", help="使用デバイス (CPU or GPU)")
     opts = parser.parse_args()
     return opts
 
-def get_graphs(opts):
+def get_graphs(opts, device):
     '''source is pascal; target is cihp; middle is atr'''
     # target 1
     cihp_adj = graph.preprocess_adj(graph.cihp_graph)
     adj1_ = Variable(torch.from_numpy(cihp_adj).float())
-    adj1 = adj1_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 20, 20).cuda()
+    adj1 = adj1_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 20, 20).to(device)
     adj1_test = adj1_.unsqueeze(0).unsqueeze(0).expand(1, 1, 20, 20)
     #source 2
     adj2_ = Variable(torch.from_numpy(graph.preprocess_adj(graph.pascal_graph)).float())
-    adj2 = adj2_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 7).cuda()
+    adj2 = adj2_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 7).to(device)
     adj2_test = adj2_.unsqueeze(0).unsqueeze(0).expand(1, 1, 7, 7)
     # s to target 3
     adj3_ = torch.from_numpy(graph.cihp2pascal_nlp_adj).float()
-    adj3 = adj3_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 20).transpose(2,3).cuda()
+    adj3 = adj3_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 20).transpose(2,3).to(device)
     adj3_test = adj3_.unsqueeze(0).unsqueeze(0).expand(1, 1, 7, 20).transpose(2,3)
     # middle 4
     atr_adj = graph.preprocess_adj(graph.atr_graph)
     adj4_ = Variable(torch.from_numpy(atr_adj).float())
-    adj4 = adj4_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 18, 18).cuda()
+    adj4 = adj4_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 18, 18).to(device)
     adj4_test = adj4_.unsqueeze(0).unsqueeze(0).expand(1, 1, 18, 18)
     # source to middle 5
     adj5_ = torch.from_numpy(graph.pascal2atr_nlp_adj).float()
-    adj5 = adj5_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 18).cuda()
+    adj5 = adj5_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 7, 18).to(device)
     adj5_test = adj5_.unsqueeze(0).unsqueeze(0).expand(1, 1, 7, 18)
     # target to middle 6
     adj6_ = torch.from_numpy(graph.cihp2atr_nlp_adj).float()
-    adj6 = adj6_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 20, 18).cuda()
+    adj6 = adj6_.unsqueeze(0).unsqueeze(0).expand(opts.gpus, 1, 20, 18).to(device)
     adj6_test = adj6_.unsqueeze(0).unsqueeze(0).expand(1, 1, 20, 18)
     train_graph = [adj1, adj2, adj3, adj4, adj5, adj6]
     test_graph = [adj1_test, adj2_test, adj3_test, adj4_test, adj5_test, adj6_test]
@@ -149,6 +151,23 @@ def main(opts):
     # run_id = int(runs[-1].split('_')[-1]) + 1 if runs else 0
     save_dir = os.path.join(save_dir_root, 'run', 'run_' + str(max_id))
 
+    # Device
+    if( opts.device == "gpu" ):
+        use_cuda = torch.cuda.is_available()
+        if( use_cuda == True ):
+            device = torch.device( "cuda" )
+            #torch.cuda.set_device(args.gpu_ids[0])
+            print( "実行デバイス :", device)
+            print( "GPU名 :", torch.cuda.get_device_name(device))
+            print("torch.cuda.current_device() =", torch.cuda.current_device())
+        else:
+            print( "can't using gpu." )
+            device = torch.device( "cpu" )
+            print( "実行デバイス :", device)
+    else:
+        device = torch.device( "cpu" )
+        print( "実行デバイス :", device)
+
     # Network definition
     if backbone == 'xception':
         net_ = deeplab_xception_universal.deeplab_xception_end2end_3d(n_classes=20, os=16,
@@ -166,7 +185,7 @@ def main(opts):
 
     if gpu_id >= 0:
         # torch.cuda.set_device(device=gpu_id)
-        net_.cuda()
+        net_.to(device)
 
     # net load weights
     if not model_path == '':
@@ -183,6 +202,8 @@ def main(opts):
     else:
         print('no trained model load !!!!!!!!')
 
+    print( net_ )
+
     log_dir = os.path.join(save_dir, 'models', datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
     writer = SummaryWriter(log_dir=log_dir)
     writer.add_text('load model',opts.loadmodel,1)
@@ -192,7 +213,7 @@ def main(opts):
     optimizer = optim.SGD(net_.parameters(), lr=p['lr'], momentum=p['momentum'], weight_decay=p['wd'])
 
     composed_transforms_tr = transforms.Compose([
-            tr.RandomSized_new(512),
+            tr.RandomSized_new(opts.image_size),
             tr.Normalize_xception_tf(),
             tr.ToTensor_()])
 
@@ -205,9 +226,12 @@ def main(opts):
         tr.Normalize_xception_tf(),
         tr.ToTensor_()])
 
-    all_train = cihp_pascal_atr.VOCSegmentation(split='train', transform=composed_transforms_tr, flip=True)
-    voc_val = pascal.VOCSegmentation(split='val', transform=composed_transforms_ts)
-    voc_val_flip = pascal.VOCSegmentation(split='val', transform=composed_transforms_ts_flip)
+    #all_train = cihp_pascal_atr.VOCSegmentation(split='train', transform=composed_transforms_tr, flip=True)
+    #voc_val = pascal.VOCSegmentation(split='val', transform=composed_transforms_ts)
+    #voc_val_flip = pascal.VOCSegmentation(split='val', transform=composed_transforms_ts_flip)
+    all_train = cihp_pascal_atr.VOCSegmentation(cihp_dir="./data/datasets/CIHP_4w", split='train', transform=composed_transforms_tr, flip=True)
+    #voc_val = pascal.VOCSegmentation(base_dir="./data/datasets/pascal", split='val', transform=composed_transforms_ts)
+    #voc_val_flip = pascal.VOCSegmentation(base_dir="./data/datasets/pascal", split='val', transform=composed_transforms_ts_flip)
 
     num_cihp,num_pascal,num_atr = all_train.get_class_num()
     ss = sam.Sampler_uni(num_cihp,num_pascal,num_atr,opts.batch)
@@ -218,12 +242,13 @@ def main(opts):
                              sampler=ss, drop_last=True)
     trainloader_balanced = DataLoader(all_train, batch_size=p['trainBatch'], shuffle=False, num_workers=p['num_workers'],
                              sampler=ss_balanced, drop_last=True)
-    testloader = DataLoader(voc_val, batch_size=testBatch, shuffle=False, num_workers=p['num_workers'])
-    testloader_flip = DataLoader(voc_val_flip, batch_size=testBatch, shuffle=False, num_workers=p['num_workers'])
+    #testloader = DataLoader(voc_val, batch_size=testBatch, shuffle=False, num_workers=p['num_workers'])
+    #testloader_flip = DataLoader(voc_val_flip, batch_size=testBatch, shuffle=False, num_workers=p['num_workers'])
 
     num_img_tr = len(trainloader)
     num_img_balanced = len(trainloader_balanced)
-    num_img_ts = len(testloader)
+    #num_img_ts = len(testloader)
+    num_img_ts = 0
     running_loss_tr = 0.0
     running_loss_tr_atr = 0.0
     running_loss_ts = 0.0
@@ -236,7 +261,7 @@ def main(opts):
     pascal_iter = int(num_img_tr//opts.batch)
 
     # Get graphs
-    train_graph, test_graph = get_graphs(opts)
+    train_graph, test_graph = get_graphs(opts,device)
     adj1, adj2, adj3, adj4, adj5, adj6 = train_graph
     adj1_test, adj2_test, adj3_test, adj4_test, adj5_test, adj6_test = test_graph
 
@@ -265,13 +290,20 @@ def main(opts):
                 global_step += 1
 
                 if gpu_id >= 0:
-                    inputs, labels = inputs.cuda(), labels.cuda()
+                    inputs, labels = inputs.to(device), labels.to(device)
 
                 if dataset_lbl == 0:
                     # 0 is cihp -- target
+                    #print( "inputs.shape : ", inputs.shape )    # torch.Size([batch, 3, 512, 512])
+                    #print( "adj1.shape : ", adj1.shape )        # torch.Size([1, 1, 20, 20])
+                    #print( "adj2.shape : ", adj2.shape )        # torch.Size([1, 1, 7, 7])
+                    #print( "adj3.shape : ", adj3.shape )        # torch.Size([1, 1, 20, 20])
                     _, outputs,_ = net.forward(None, input_target=inputs, input_middle=None, adj1_target=adj1, adj2_source=adj2,
                         adj3_transfer_s2t=adj3, adj3_transfer_t2s=adj3.transpose(2,3), adj4_middle=adj4,adj5_transfer_s2m=adj5.transpose(2, 3),
                         adj6_transfer_t2m=adj6.transpose(2, 3),adj5_transfer_m2s=adj5,adj6_transfer_m2t=adj6,)
+
+                    #print( "outputs.shape : ", outputs.shape )  # torch.Size([2, 20, 512, 512])
+
                 elif dataset_lbl == 1:
                     # pascal is source
                     outputs, _, _ = net.forward(inputs, input_target=None, input_middle=None, adj1_target=adj1,
@@ -326,6 +358,7 @@ def main(opts):
 
                 # Show 10 * 3 images results each epoch
                 if ii % (num_img_tr // 10) == 0:
+#                if ii % (num_img_tr // 4000) == 0:
                     grid_image = make_grid(inputs[:3].clone().cpu().data, 3, normalize=True)
                     writer.add_image('Image', grid_image, global_step)
                     grid_image = make_grid(ut.decode_seg_map_sequence(torch.max(outputs[:3], 1)[1].detach().cpu().numpy()), 3, normalize=False,
@@ -334,7 +367,7 @@ def main(opts):
                     grid_image = make_grid(ut.decode_seg_map_sequence(torch.squeeze(labels[:3], 1).detach().cpu().numpy()), 3, normalize=False, range=(0, 255))
                     writer.add_image('Groundtruth label', grid_image, global_step)
 
-                print('loss is ',loss.cpu().item(),flush=True)
+                print('step {} | loss is {}'.format(ii , loss.cpu().item()),flush=True)
         else:
             # Balanced the number of datasets
             for ii, sample_batched in enumerate(trainloader_balanced):
@@ -345,7 +378,7 @@ def main(opts):
                 global_step += 1
 
                 if gpu_id >= 0:
-                    inputs, labels = inputs.cuda(), labels.cuda()
+                    inputs, labels = inputs.to(device), labels.to(device)
 
                 if dataset_lbl == 0:
                     # 0 is cihp -- target
@@ -428,10 +461,11 @@ def main(opts):
             print("Save model at {}\n".format(os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth')))
 
         # One testing epoch
+        """
         if useTest and epoch % nTestInterval == (nTestInterval - 1):
             val_pascal(net_=net_, testloader=testloader, testloader_flip=testloader_flip, test_graph=test_graph,
                        criterion=criterion, epoch=epoch, writer=writer)
-
+        """
 
 def val_pascal(net_, testloader, testloader_flip, test_graph, criterion, epoch, writer, classes=7):
     running_loss_ts = 0.0
@@ -451,17 +485,17 @@ def val_pascal(net_, testloader, testloader_flip, test_graph, criterion, epoch, 
 
         with torch.no_grad():
             if gpu_id >= 0:
-                inputs, labels = inputs.cuda(), labels.cuda()
+                inputs, labels = inputs.to(device), labels.to(device)
             outputs, _, _ = net_.forward(inputs, input_target=None, input_middle=None,
-                                         adj1_target=adj1_test.cuda(),
-                                         adj2_source=adj2_test.cuda(),
-                                         adj3_transfer_s2t=adj3_test.cuda(),
-                                         adj3_transfer_t2s=adj3_test.transpose(2, 3).cuda(),
-                                         adj4_middle=adj4_test.cuda(),
-                                         adj5_transfer_s2m=adj5_test.transpose(2, 3).cuda(),
-                                         adj6_transfer_t2m=adj6_test.transpose(2, 3).cuda(),
-                                         adj5_transfer_m2s=adj5_test.cuda(),
-                                         adj6_transfer_m2t=adj6_test.cuda(), )
+                                         adj1_target=adj1_test.to(device),
+                                         adj2_source=adj2_test.to(device),
+                                         adj3_transfer_s2t=adj3_test.to(device),
+                                         adj3_transfer_t2s=adj3_test.transpose(2, 3).to(device),
+                                         adj4_middle=adj4_test.to(device),
+                                         adj5_transfer_s2m=adj5_test.transpose(2, 3).to(device),
+                                         adj6_transfer_t2m=adj6_test.transpose(2, 3).to(device),
+                                         adj5_transfer_m2s=adj5_test.to(device),
+                                         adj6_transfer_m2t=adj6_test.to(device), )
         # pdb.set_trace()
         outputs = (outputs[0] + flip(outputs[1], dim=-1)) / 2
         outputs = outputs.unsqueeze(0)

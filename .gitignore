@@ -1,7 +1,10 @@
+.DS_Store
 *.pyc
 *.pth
 *.code-workspace
 *.tfevents.*
+*.zip
+*.rar
 
 _old/
 tmp/
@@ -25,24 +28,9 @@ Graphonomy/data/datasets/CIHP_4w/Images/*.jpg
 Graphonomy/data/datasets/CIHP_4w/Instance_ids/*.jpg
 Graphonomy/data/datasets/CIHP_4w/Instances/*.jpg
 
-
-Graphonomy/data/datasets/ATR/Categories/*.png
-Graphonomy/data/datasets/ATR/Category_ids/*.png
-Graphonomy/data/datasets/ATR/Category_rev_ids/*.png
-Graphonomy/data/datasets/ATR/Human/*.png
-Graphonomy/data/datasets/ATR/Human_ids/*.png
-Graphonomy/data/datasets/ATR/Images/*.png
-Graphonomy/data/datasets/ATR/Instance_ids/*.png
-Graphonomy/data/datasets/ATR/Instances/*.png
-
-Graphonomy/data/datasets/ATR/Categories/*.jpg
-Graphonomy/data/datasets/ATR/Category_ids/*.jpg
-Graphonomy/data/datasets/ATR/Category_rev_ids/*.jpg
-Graphonomy/data/datasets/ATR/Human/*.jpg
-Graphonomy/data/datasets/ATR/Human_ids/*.jpg
-Graphonomy/data/datasets/ATR/Images/*.jpg
-Graphonomy/data/datasets/ATR/Instance_ids/*.jpg
-Graphonomy/data/datasets/ATR/Instances/*.jpg
+Graphonomy/data/datasets/ATR/JPEGImages/*.jpg
+Graphonomy/data/datasets/ATR/SegmentationClassAug/*.png
+Graphonomy/data/datasets/ATR/SegmentationClassAug_rev/*.png
 
 Graphonomy/data/datasets/pascal/Categories/*.png
 Graphonomy/data/datasets/pascal/Category_ids/*.png

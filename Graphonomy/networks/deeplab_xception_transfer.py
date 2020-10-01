@@ -748,8 +748,8 @@ class deeplab_xception_transfer_projection_savemem(deeplab_xception_transfer_bas
 
     def forward(self, input,adj1_target=None, adj2_source=None,adj3_transfer=None ):
         x, low_level_features = self.xception_features(input)
-        print( "[deeplab_xception_transfer_projection_savemem / after encoder] x.shape", x.shape )                                     # torch.Size([2, 2048, 32, 32])
-        print( "[deeplab_xception_transfer_projection_savemem / after encoder] low_level_features.shape", low_level_features.shape )   # torch.Size([2, 256, 128, 128])
+        #print( "[deeplab_xception_transfer_projection_savemem / after encoder] x.shape", x.shape )                                     # torch.Size([2, 2048, 32, 32])
+        #print( "[deeplab_xception_transfer_projection_savemem / after encoder] low_level_features.shape", low_level_features.shape )   # torch.Size([2, 256, 128, 128])
 
         x1 = self.aspp1(x)
         x2 = self.aspp2(x)
@@ -763,7 +763,7 @@ class deeplab_xception_transfer_projection_savemem(deeplab_xception_transfer_bas
         x = self.concat_projection_conv1(x)
         x = self.concat_projection_bn1(x)
         x = self.relu(x)
-        print( "[deeplab_xception_transfer_projection_savemem/ after ASPP] x.shape : ", x.shape )   # torch.Size([2, 256, 32, 32])
+        #print( "[deeplab_xception_transfer_projection_savemem/ after ASPP] x.shape : ", x.shape )   # torch.Size([2, 256, 32, 32])
 
         x = F.upsample(x, size=low_level_features.size()[2:], mode='bilinear', align_corners=True)
 
@@ -775,25 +775,25 @@ class deeplab_xception_transfer_projection_savemem(deeplab_xception_transfer_bas
         x = torch.cat((x, low_level_features), dim=1)
         x = self.decoder(x)
 
-        print( "[deeplab_xception_transfer_projection_savemem/ after Deeplab v3+] x.shape : ", x.shape )    # torch.Size([2, 256, 128, 128])
+        #print( "[deeplab_xception_transfer_projection_savemem/ after Deeplab v3+] x.shape : ", x.shape )    # torch.Size([2, 256, 128, 128])
         ### add graph
         # source graph
         source_graph = self.source_featuremap_2_graph(x)
-        print( "[deeplab_xception_transfer_projection_savemem / source graph] source_graph.shape", source_graph.shape )     # torch.Size([2, 7, 128])
+        #print( "[deeplab_xception_transfer_projection_savemem / source graph] source_graph.shape", source_graph.shape )     # torch.Size([2, 7, 128])
 
         source_graph1 = self.source_graph_conv1.forward(source_graph,adj=adj2_source, relu=True)
         source_graph2 = self.source_graph_conv2.forward(source_graph1, adj=adj2_source, relu=True)
         source_graph3 = self.source_graph_conv2.forward(source_graph2, adj=adj2_source, relu=True)
-        print( "[deeplab_xception_transfer_projection_savemem / source graph] source_graph1.shape", source_graph1.shape )   # torch.Size([1, 2, 7, 128])
-        print( "[deeplab_xception_transfer_projection_savemem / source graph] source_graph2.shape", source_graph2.shape )   # torch.Size([1, 2, 7, 128])
-        print( "[deeplab_xception_transfer_projection_savemem / source graph] source_graph3.shape", source_graph3.shape )   # torch.Size([1, 2, 7, 128])
+        #print( "[deeplab_xception_transfer_projection_savemem / source graph] source_graph1.shape", source_graph1.shape )   # torch.Size([1, 2, 7, 128])
+        #print( "[deeplab_xception_transfer_projection_savemem / source graph] source_graph2.shape", source_graph2.shape )   # torch.Size([1, 2, 7, 128])
+        #print( "[deeplab_xception_transfer_projection_savemem / source graph] source_graph3.shape", source_graph3.shape )   # torch.Size([1, 2, 7, 128])
 
         source_2_target_graph1_v5 = self.transpose_graph.forward(source_graph1, adj=adj3_transfer, relu=True)
         source_2_target_graph2_v5 = self.transpose_graph.forward(source_graph2, adj=adj3_transfer, relu=True)
         source_2_target_graph3_v5 = self.transpose_graph.forward(source_graph3, adj=adj3_transfer, relu=True)
-        print( "[deeplab_xception_transfer_projection_savemem] source_2_target_graph1_v5.shape", source_2_target_graph1_v5.shape )  # torch.Size([1, 2, 20, 128])
-        print( "[deeplab_xception_transfer_projection_savemem] source_2_target_graph2_v5.shape", source_2_target_graph2_v5.shape )  # torch.Size([1, 2, 20, 128])
-        print( "[deeplab_xception_transfer_projection_savemem] source_2_target_graph3_v5.shape", source_2_target_graph3_v5.shape )  # torch.Size([1, 2, 20, 128])
+        #print( "[deeplab_xception_transfer_projection_savemem] source_2_target_graph1_v5.shape", source_2_target_graph1_v5.shape )  # torch.Size([1, 2, 20, 128])
+        #print( "[deeplab_xception_transfer_projection_savemem] source_2_target_graph2_v5.shape", source_2_target_graph2_v5.shape )  # torch.Size([1, 2, 20, 128])
+        #print( "[deeplab_xception_transfer_projection_savemem] source_2_target_graph3_v5.shape", source_2_target_graph3_v5.shape )  # torch.Size([1, 2, 20, 128])
 
         # target graph
         # print('x size',x.size(),adj1.size())
@@ -802,11 +802,11 @@ class deeplab_xception_transfer_projection_savemem(deeplab_xception_transfer_bas
         source_2_target_graph1 = self.similarity_trans(source_graph1, graph)
 
         # graph combine 1
-        print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] graph.shape", graph.shape )
-        print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] source_2_target_graph1.shape", source_2_target_graph1.shape )
-        print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] source_2_target_graph1_v5.shape", source_2_target_graph1_v5.shape )
-        print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] source_2_target_graph1.squeeze(0).shape", source_2_target_graph1.squeeze(0).shape )
-        print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] source_2_target_graph1_v5.squeeze(0).shape", source_2_target_graph1_v5.squeeze(0).shape )
+        #print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] graph.shape", graph.shape )
+        #print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] source_2_target_graph1.shape", source_2_target_graph1.shape )
+        #print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] source_2_target_graph1_v5.shape", source_2_target_graph1_v5.shape )
+        #print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] source_2_target_graph1.squeeze(0).shape", source_2_target_graph1.squeeze(0).shape )
+        #print( "[deeplab_xception_transfer_projection_savemem / graph combine 1] source_2_target_graph1_v5.squeeze(0).shape", source_2_target_graph1_v5.squeeze(0).shape )
         graph = torch.cat((graph,source_2_target_graph1.squeeze(0), source_2_target_graph1_v5.squeeze(0)),dim=-1)
         graph = self.fc_graph.forward(graph,relu=True)
 

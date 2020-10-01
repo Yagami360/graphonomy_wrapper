@@ -161,8 +161,16 @@ class VOCSegmentation(Dataset):
         _img, _target,_lbl= self._make_img_gt_point_pair(index)
         sample = {'image': _img, 'label': _target,}
 
+        """
+        for i in range(64):
+            for j in range(64):
+                if( _target.getpixel((i,j)) != 0 ):
+                    print( "_target.getpixel : ", _target.getpixel((i,j)) )
+        """
         if self.transform is not None:
             sample = self.transform(sample)
+
+        
         sample['pascal'] = _lbl
         return sample
 

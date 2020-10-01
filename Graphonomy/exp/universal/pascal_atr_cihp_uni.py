@@ -321,8 +321,10 @@ def main(opts):
                                                 adj6_transfer_t2m=adj6.transpose(2, 3), adj5_transfer_m2s=adj5,
                                                 adj6_transfer_m2t=adj6, )
                 # print(sample_batched['pascal'])
-                # print(outputs.size(),)
-                # print(labels)
+                print(outputs.size(),)
+                print( "labels.shape: ", labels.shape)
+                print( "labels.dtype: ", labels.dtype)
+                print( "labels[0,0,:,:] : ", labels[0,0,:,:] )
                 loss = criterion(outputs, labels,  batch_average=True)
                 running_loss_tr += loss.item()
 
@@ -361,9 +363,13 @@ def main(opts):
 #                if ii % (num_img_tr // 4000) == 0:
                     grid_image = make_grid(inputs[:3].clone().cpu().data, 3, normalize=True)
                     writer.add_image('Image', grid_image, global_step)
-                    grid_image = make_grid(ut.decode_seg_map_sequence(torch.max(outputs[:3], 1)[1].detach().cpu().numpy()), 3, normalize=False,
-                                           range=(0, 255))
+
+                    grid_image = make_grid(
+                                    ut.decode_seg_map_sequence(torch.max(outputs[:3], 1)[1].detach().cpu().numpy()), 
+                                    3, normalize=False, range = (0, 255)
+                                )
                     writer.add_image('Predicted label', grid_image, global_step)
+
                     grid_image = make_grid(ut.decode_seg_map_sequence(torch.squeeze(labels[:3], 1).detach().cpu().numpy()), 3, normalize=False, range=(0, 255))
                     writer.add_image('Groundtruth label', grid_image, global_step)
 

@@ -470,6 +470,7 @@ class deeplab_xception_end2end_3d(deeplab_xception_transfer_basemodel_savememory
         # print(x.size())
         x = torch.cat((x, low_level_features), dim=1)
         x = self.decoder(x)
+        #print( "x[0,0,:,:] : ", x[0,0,:,:] )
 
         ### source graph
         source_graph = self.source_featuremap_2_graph(x)
@@ -513,10 +514,17 @@ class deeplab_xception_end2end_3d(deeplab_xception_transfer_basemodel_savememory
 
         ## concat
         # print(source_graph1.size(), target_2_source_graph1.size(), )
+        #print( "source_graph1.shape : ", source_graph1.shape )
+        #print( "target_2_source_graph1.shape : ", target_2_source_graph1.shape )
+        #print( "target_2_source_graph1_v5.shape : ", target_2_source_graph1_v5.shape )
         source_graph1 = torch.cat(
             (source_graph1, target_2_source_graph1, target_2_source_graph1_v5,
              middle_2_source_graph1, middle_2_source_graph1_v5), dim=-1)
-        source_graph1 = self.fc_graph_source.forward(source_graph1, relu=True)
+
+        #print( "[concat] source_graph1.shape : ", source_graph1.shape )         # torch.Size([1, 4, 7, 160])
+        source_graph1 = self.fc_graph_source.forward(source_graph1, relu=True)  
+        #print( "[fc] source_graph1.shape : ", source_graph1.shape )             # torch.Size([1, 4, 7, 32])
+
         # target
         target_graph1 = torch.cat(
             (target_graph1, source_2_target_graph1, source_2_target_graph1_v5,
@@ -529,6 +537,8 @@ class deeplab_xception_end2end_3d(deeplab_xception_transfer_basemodel_savememory
 
 
         ### seconde task
+        #print( "source_graph1.shape : ", source_graph1.shape )      # torch.Size([1, 4, 7, 32])
+        #print( "target_graph1.shape : ", target_graph1.shape )
         source_graph2 = self.source_graph_conv1.forward(source_graph1, adj=adj2_source, relu=True)
         target_graph2 = self.target_graph_conv1.forward(target_graph1, adj=adj1_target, relu=True)
         middle_graph2 = self.target_graph_conv1.forward(middle_graph1, adj=adj4_middle, relu=True)
@@ -673,6 +683,7 @@ class deeplab_xception_end2end_3d(deeplab_xception_transfer_basemodel_savememory
             target_x = self.bottom_forward_target(x, target_graph)
 
             target_x = F.upsample(target_x, size=input.size()[2:], mode='bilinear', align_corners=True)
+            print( "target_x[0,0,:,:] : ", target_x[0,0,:,:] )
             return None, target_x, None
 
         if input_source is not None and input_target is None and input_middle is None:

@@ -7,9 +7,9 @@ services:
         runtime: nvidia
         build:
             context: "."
-            dockerfile: docker/Dockerfile
+            dockerfile: docker/Dockerfile2
         volumes:
-            - ${PWD}:/graphonomy_wrapper
+            - ${PWD}:/home/ubuntu/share/graphonomy_wrapper
             - /etc/group:/etc/group:ro
             - /etc/passwd:/etc/passwd:ro
         ports:
@@ -26,9 +26,9 @@ services:
         image: graphonomy_wrapper_image
         build:
             context: "."
-            dockerfile: docker/Dockerfile
+            dockerfile: docker/Dockerfile2
         volumes:
-            - ${PWD}:/graphonomy_wrapper
+            - ${PWD}:/home/ubuntu/share/graphonomy_wrapper
             - /etc/group:/etc/group:ro
             - /etc/passwd:/etc/passwd:ro
         ports:
